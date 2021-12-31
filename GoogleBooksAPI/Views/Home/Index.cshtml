@@ -1,0 +1,232 @@
+﻿@{
+    ViewBag.Title = "Live Library";
+}
+<style>
+    input, textarea {
+        min-width: 100%;
+    }
+
+    .card {
+        min-width: 100% !important;
+    }
+
+    span {
+        font-size: 18px;
+        color: gray;
+        font-style: oblique;
+    }
+
+    .card-image-wrapper {
+        display: flex;
+        width: 100%;
+        height: 250px;
+        background-color: darkgrey;
+    }
+
+    .card-img-top {
+        display: block;
+        width: auto;
+        max-height: 100%;
+        margin: auto;
+    }
+
+    img {
+        padding-top: 10px;
+        max-width: 193px;
+        min-height: 200px;
+        max-height: 200px;
+    }
+</style>
+
+<div class="card-box">
+    <h4 class="header-title">GOOGLE BOOKS API / <span> Live Library</span></h4>
+    <hr />
+
+    <form>
+        <div class="container card p-2">
+
+            <div class="row">
+                <div class="col-4">
+                    <label class="col-form-label" for="Title">Book Title</label>
+                    <input class="form-control" id="Title" type="text" autocomplete="off" />
+                </div>
+
+                <div class="col-4">
+                    <label class="col-form-label" for="Author">Author</label>
+                    <input class="form-control" id="Author" type="text" autocomplete="off" />
+                </div>
+
+                <div class="col-4">
+                    <label class="col-form-label" for="Author">Publisher</label>
+                    <input class="form-control" id="Publisher" type="text" autocomplete="off" />
+                </div>
+
+                <div class="col-12">
+                    <label class="col-form-label" for="Description">Description</label>
+                    <textarea rows="2" class="form-control" id="Description" type="text" autocomplete="off"></textarea>
+                </div>
+
+                <div class="col-12 mt-2">
+                    <button type="submit" class="float-end btn btn-primary right">Search</button>
+                    <button type="button" class="float-end btn btn-success right m-1 mt-0 mb-0" onclick="fiveMinSearch()">Search (With Every 5min cache)</button>
+                    <button type="button" class="float-end btn btn-danger right mt-0 mb-0" onclick="forceSearch()">Force Live Search!</button>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<a href="javascript:" id="return-to-top"><i class="icon-chevron-up"></i></a>
+
+<div class="container mt-5">
+    <div class="row bg-light pt-5 pb-5 shadow-sm" id="card-holder">
+        <h5 class="text-center p-5">You can search in <a href="../LocalLibrary">Local Library</a> too!</h5>
+    </div>
+</div>
+
+<script>
+
+    var startIndex = 0;
+    var prevSearchQuery = "";
+    var allowToMakeReq = false;
+    var noNewBookFound = false;
+    var searchType = 0;
+
+    window.onload = () => {
+
+        active_nav('nav-live');
+
+        var form = document.querySelector("form");
+        form.onsubmit = submitted.bind(form);
+
+        $(window).scroll(function () {
+            // return to top
+            if ($(this).scrollTop() >= 50) {
+                $('#return-to-top').fadeIn(200);
+            } else {
+                $('#return-to-top').fadeOut(200);
+            }
+
+            // load more on scroll to the end of the page
+            if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+                if (allowToMakeReq) {
+                    getBooks(true);
+                    allowToMakeReq = false;
+                }
+            }
+        });
+
+        $('#return-to-top').click(function () {
+            $('body,html').animate({
+                scrollTop: 0
+            }, 500);
+        });
+    };
+
+    function submitted(event) {
+        event.preventDefault();
+        searchType = 0;
+        getBooks(false);
+    }
+
+    function forceSearch() {
+        searchType = 1;
+        getBooks(false);
+    }
+
+    function fiveMinSearch() {
+        searchType = 2;
+        getBooks(false);
+    }
+
+    function getBooks(fromScroll) {
+
+        if (!fromScroll) {
+            $('#card-holder').empty();
+            startIndex = 0;
+        } else {
+            if (noNewBookFound) {
+                alert('no more data')
+                return false;
+            }
+        }
+
+        document.querySelector('body').appendChild(createSpinnerEl());
+
+        var Model = {};
+        Model.intitle = $('#Title').val();
+        Model.inauthor = $('#Author').val();
+        Model.inpublisher = $('#Publisher').val();
+        Model.indescription = $('#Description').val();
+        Model.startIndex = startIndex;
+        Model.type = searchType;
+
+        var url = '/Home/q';
+        $.get(url, {
+            intitle: Model.intitle,
+            inauthor: Model.inauthor,
+            inpublisher: Model.inpublisher,
+            indescription: Model.indescription,
+            startIndex: Model.startIndex,
+            type: Model.type
+        },
+            function (response) {
+
+                startIndex += 20;
+                displayResults(response.Data, fromScroll);
+
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+
+                if (jqXHR.status == 404 || jqXHR.status == 500) {
+                    alert('something went wrong');
+                }
+                if (jqXHR.status == 400) {
+                    alert("At least one search parameter is required!");
+                }
+                $('#card-holder').append('<h5 class="text-center p-5">You can search in <a href="../LocalLibrary">Local Library</a> too!</h5>');
+                $('#spinner-div').remove();
+            });
+
+    }
+
+    function displayResults(data, fromScroll) {
+
+        $('#spinner-div').remove();
+        if (data.length == 0 && !fromScroll) {
+            $('#card-holder').append('<p class="text-center">Oops, No result found!</p>');
+            return;
+        }
+
+        noNewBookFound = true;
+
+        data.forEach(x => {
+            if (!(!!document.getElementById(x.Item_id))) {
+                var el =
+                    `<div class="col-lg-4 mb-3 d-flex align-items-stretch" id="` + x.Item_id + `">
+                            <div class="card">
+                                <img src="` + (!!x.ImageLinks && !!x.ImageLinks.Thumbnail ? x.ImageLinks.Thumbnail : '../Images/no-img.jpg') + `" class="card-img-top" alt="` + (!!x.Title ? x.Title : '') + `">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">` + (!!x.Title ? x.Title : '-') + `</h5>
+                                    <h5 class="card-title"><b>by</b><span> ` + (!!x.AuthorList ? x.AuthorList : '-') + `</span></h5>
+                                    <p class="card-text mb-4">` + (!!x.CategoryList ? x.CategoryList : '-') + `</p>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-danger">(Avg Rating: ` + (!!x.AverageRating ? x.AverageRating + '/5)' : ' Not rated)') + `</span>
+                                        <a href="` + x.PreviewLink + `" target="_blank" class="btn btn-warning text-white mt-auto">Preview</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`
+
+                $('#card-holder').append(el);
+
+                noNewBookFound = false;
+            }
+
+        });
+        allowToMakeReq = true;
+    }
+
+</script>

@@ -1,0 +1,278 @@
+﻿@{
+    ViewBag.Title = "Local Library";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    input, textarea {
+        min-width: 100%;
+    }
+
+    .card {
+        min-width: 100% !important;
+    }
+
+    span {
+        font-size: 18px;
+        color: gray;
+        font-style: oblique;
+    }
+
+    tbody tr td {
+        font-size: 18px;
+    }
+
+        tbody tr td:nth-child(8) {
+            text-align: left;
+        }
+</style>
+
+<div class="card-box">
+    <h4 class="header-title">GOOGLE BOOKS API / <span> Local Library</span></h4>
+    <hr />
+
+    <form>
+        <div class="container card p-2">
+
+            <div class="row">
+                <div class="col-4">
+                    <label class="col-form-label" for="Title">Book Title</label>
+                    <input class="form-control" id="Title" type="text" autocomplete="off" />
+                </div>
+
+                <div class="col-4">
+                    <label class="col-form-label" for="Author">Author</label>
+                    <input class="form-control" id="Author" type="text" autocomplete="off" />
+                </div>
+
+                <div class="col-4">
+                    <label class="col-form-label" for="Author">Publisher</label>
+                    <input class="form-control" id="Publisher" type="text" autocomplete="off" />
+                </div>
+
+                <div class="col-12">
+                    <label class="col-form-label" for="Description">Description</label>
+                    <textarea rows="2" class="form-control" id="Description" type="text" autocomplete="off"></textarea>
+                </div>
+
+                <div class="col-12 mt-2">
+                    <button type="submit" class="float-end btn btn-primary right">Search</button>
+                    <button type="button" class="float-end btn btn-danger right m-1 mt-0 mb-0 text-white" onclick="cache_search()">Search with cache</button>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="container mt-5">
+    <div class="row bg-light pt-5 pb-5 shadow-sm">
+        <div class="row"><div class="col-md-12 form-group text-left"><div name="pagination"></div></div></div>
+        <table class="table table-bordered table-responsive table-striped">
+            <thead class="text-center table-dark">
+                <tr>
+                    <td>#</td>
+                    <td>Book Cover</td>
+                    <td>Title</td>
+                    <td>Author(s)</td>
+                    <td>Category</td>
+                    <td>Publisher</td>
+                    <td>Publish Date</td>
+                    <td>Description</td>
+                    <td class="text-nowrap">More info</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="9" class="text-center p-5">You search result will be shown here</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="row"><div class="col-md-12 form-group text-left"><div name="pagination"></div></div></div>
+    </div>
+</div>
+
+<div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="Modal_Title"> Book Info</h3>
+                <button type="button" onclick="$('#Modal').modal('hide');" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only"></span></button>
+            </div>
+            <div class="modal-body">
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="javascript:" id="return-to-top"><i class="icon-chevron-up"></i></a>
+
+<script>
+
+    var startIndex = 0;
+    var prevSearchQuery = "";
+    var allowToMakeReq = false;
+    var noNewBookFound = false;
+    var withCache = false;
+    var MPN = 1;
+
+    var setupPagination = function (itemsCount, pageSize, currentPage) {
+        $('[name="pagination"]').pagination({
+            items: itemsCount,
+            itemsOnPage: pageSize,
+            prevText: "prev",
+            nextText: "next",
+            currentPage: currentPage,
+            onPageClick: function (pageNumber, event) {
+                event.preventDefault();
+                getBooks(pageNumber, withCache);
+            }
+        });
+    }
+
+
+    window.onload = () => {
+
+        active_nav('nav-local');
+
+        var form = document.querySelector("form");
+        form.onsubmit = submitted.bind(form);
+
+
+        $(window).scroll(function () {
+            if ($(this).scrollTop() >= 50) {
+                $('#return-to-top').fadeIn(200);
+            } else {
+                $('#return-to-top').fadeOut(200);
+            }
+        });
+
+        $('#return-to-top').click(function () {
+            $('body,html').animate({
+                scrollTop: 0
+            }, 500);
+        });
+    };
+
+    function submitted(event) {
+        event.preventDefault();
+        withCache = false;
+        getBooks(1, withCache);
+
+    }
+
+    function cache_search() {
+        withCache = true;
+        getBooks(MPN, withCache);
+    }
+
+    function getBooks(x, with_cache) {
+
+        document.querySelector('body').appendChild(createSpinnerEl());
+
+        var Model = {};
+        Model.Intitle = $('#Title').val();
+        Model.Inauthor = $('#Author').val();
+        Model.Inpublisher = $('#Publisher').val();
+        Model.Indescription = $('#Description').val();
+        Model.StartIndex = (!!x ? x : MPN);
+        MPN = Model.StartIndex;
+
+        var url;
+        if (!with_cache)
+            url = '/LocalLibrary/q';
+        else
+            url = '/LocalLibrary/qWithCache';
+
+        $.post(url, {
+            model: Model
+        },
+            function (response) {
+                if (response.Data.length == 0) {
+                    $('#spinner-div').remove();
+                    $('tbody').empty();
+                    var tr = '<tr><td colspan="9" class="text-center p-5 cursor-pointer">No Item found! You can search <a href="/">live on google libarary</a></td></tr>';
+                    $('tbody').append(tr);
+                } else {
+                    setupPagination(response.TotalRows, 40, MPN);
+                    displayResults(response.Data);
+                }
+
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+
+                if (jqXHR.status == 404 || jqXHR.status == 500) {
+                    alert('something went wrong');
+                }
+
+                if (jqXHR.status == 400) {
+                    alert("At least one search parameter is required!");
+                }
+
+                $('#spinner-div').remove();
+
+            });
+
+    }
+
+    function displayResults(data) {
+
+        $('#spinner-div').remove();
+        $('tbody').empty();
+
+        data.forEach((x, indx) => {
+
+            var img = (withCache && !!x.ImageLinks ? x.ImageLinks.SmallThumbnail : x.SmallThumbnail);
+            if (!(!!img))
+                img = '../Images/no-img.jpg';
+
+            var tr = `
+                        <tr id="` + x.Entity_Id + `">
+                            <td>` + ((40 * (MPN - 1)) + (indx + 1)) + `</td>
+                            <td><img src="` + img + `" width="100px" alt="` + x.Title + `" /></td>
+                            <td>` + (!!x.Title ? x.Title : '-') + `</td>
+                            <td>` + (!!x.AuthorList ? x.AuthorList : '-') + `</td>
+                            <td>` + (!!x.CategoryList ? x.CategoryList : '-') + `</td>
+                            <td>` + (!!x.Publisher ? x.Publisher : '-') + `</td>
+                            <td class="text-nowrap">` + (!!x.PublishedDate ? x.PublishedDate : '-') + `</td>
+                            <td>` + (!!x.Description ? x.Description.substring(0, 150) + '...' : '-') + `</td>
+                            <td><button class="btn btn-warning">Click</button></td>
+                        </tr>`;
+
+
+            $('tbody').append(tr);
+        });
+
+        document.querySelectorAll('tbody tr button').forEach(x => {
+            x.addEventListener('click', function () {
+                showBookDetail(this.parentElement.parentElement.id)
+            });
+        });
+
+
+    }
+
+    function showBookDetail(id) {
+        document.querySelector('body').appendChild(createSpinnerEl());
+
+        var url = '/LocalLibrary/BookDetail';
+        $.get(url, { bookid: id }, function (result) {
+            $('#spinner-div').remove();
+
+            $('#Modal .modal-body').html('');
+            $('#Modal .modal-body').html(result);
+            $('#Modal_Title').html('Book Info');
+            $('#Modal').modal('show');
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+
+            if (jqXHR.status == 404 || jqXHR.status == 500) {
+                alert('something went wrong');
+            }
+            if (jqXHR.status == 400) {
+                alert("Validation Error!");
+            }
+
+            $('#spinner-div').remove();
+        });
+    }
+
+</script>

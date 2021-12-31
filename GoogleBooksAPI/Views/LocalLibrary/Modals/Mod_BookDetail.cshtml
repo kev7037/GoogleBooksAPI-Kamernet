@@ -1,0 +1,30 @@
+﻿@model GoogleBooksAPI.Models.GoogleAPI.VolumeInfo
+@{
+    Layout = null;
+}
+
+<style>
+    .card {
+        min-width: 100%;
+    }
+</style>
+
+<div class="row card mb-3">
+    <div class="row no-gutters col-12">
+        <div class="col-md-4">
+            <img src="@(Model.ImageLinks != null && !String.IsNullOrWhiteSpace(Model.ImageLinks.Thumbnail) ? Model.ImageLinks.Thumbnail : "../Images/no-img.jpg")" class="card-img-top" alt="@(!String.IsNullOrWhiteSpace(Model.Title) ? Model.Title : "")">
+        </div>
+        <div class="col-md-8">
+            <div class="card-body">
+                <h4 class="card-title">@(!String.IsNullOrWhiteSpace(Model.Title) ? String.Concat(Model.Title, " (", Model.PublishedDate, ")") : "-") </h4>
+                <h5>by <span>@(!String.IsNullOrWhiteSpace(Model.AuthorList) ? Model.AuthorList : "-")</span></h5>
+                <hr />
+                <h5 class=card-text mb-4"><b>Category: </b>@(!String.IsNullOrWhiteSpace(Model.CategoryList) ? Model.CategoryList : "No Category available")</h5>
+                <hr />
+                <p class="card-text"><b>Description: </b>@(!String.IsNullOrWhiteSpace(Model.Description) ? Model.Description : "No Description available")</p>
+                <p class="card-text"><small class="text-muted">Avg rating: @Model.AverageRating from @Model.RatingsCount vote</small></p>
+                <a href="@Model.PreviewLink" target="_blank" class="btn btn-primary mt-auto">Preview</a>
+            </div>
+        </div>
+    </div>
+</div>
