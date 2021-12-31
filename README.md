@@ -11,7 +11,7 @@ Search can be made based on Title, Author, Publisher, Description of the books.
 <br/>
 The result of the search will be stored using `SqlClient`.
 <br/>
-User next searches will be either fetched from Google Books API or Local Database.
+User's next searches will be either fetched from Google Books API or Local Database.
 
 
 The project is `code-first` and uses:
