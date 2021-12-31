@@ -9,9 +9,9 @@ The website makes `HttpGet` request to <a href="https://developers.google.com/bo
 <br/>
 Search can be made based on Title, Author, Publisher, Description of the books.
 <br/>
-Result of the search will be stored using `SqlClient`.
+The result of the search will be stored using `SqlClient`.
 <br/>
-User next searches will be eaither fetched from Google Books API or Local Database.
+User next searches will be either fetched from Google Books API or Local Database.
 
 
 The project is `code-first` and uses:
@@ -32,29 +32,28 @@ Run the project using `Visual Studio` / `Visual Studio code` or `dotnet CLI`. Yo
 
 > This page only uses Entity Framework ORM
 
-This page contains 3 buttons that operate the search funcationality:
+This page contains 3 buttons that operate the search functionality:
 
 ### - Search button
-> Local database will be checked to find whether this search query has been made before. If found, booklist will be retrived from local database.
-If no result found, an HTTP request will be sent to the Google Books API, result will be sotred localy and shown to the client.
+> Local database will be checked to find whether this search query has been made before. If found, the booklist will be retrieved from the local database.
+If no result is found, an HTTP request will be sent to the Google Books API, the result will be stored locally and shown to the client.
 
 
 ### - Search (With Every 5min cache) button
-> Local database will be checked to find whether this search query has been made during last 5mins. If found, booklist will be retrived from local database.
-If no result found, an HTTP request will be sent to the Google Books API, result will be sotred localy (Add or Update) and shown to the client.
+> Local database will be checked to find whether this search query has been made during the last 5mins. If found, the booklist will be retrieved from the local database.
+If no result is found, an HTTP request will be sent to the Google Books API, the result will be stored locally (Add or Update) and shown to the client.
 
 ### - Force Live Search button
-> An HTTP request will be sent to the Google Books API without checking database, result will be sotred localy (Add or Update) and shown to the client.
+> An HTTP request will be sent to the Google Books API without checking the database, the result will be stored locally (Add or Update) and shown to the client.
 
 ## Local Library Page (Only local search)
-This page contains 2 buttons that operate the search funcationality:
+This page contains 2 buttons that operate the search functionality:
 
 ### - Search button
-> Operates the search query on local database using dapper by calling a stored procedure.
+> Operates the search query on the local database using dapper by calling a stored procedure.
 
 
 ### - Search with cache button
-> Operates the search query on local database using Entity Framework. After the first search made by this button, a memory cache will be created for the next
-5 minutes. If client uses this method again in less than 5 minutes, the result will be retrived from memory cache. When memory cache expires, another memory cache
-will be created on next client search.
-
+> Operates the search query on the local database using Entity Framework. After the first search made by this button, a memory cache will be created for the next
+5 minutes. If the client uses this method again in less than 5 minutes, the result will be retrieved from the memory cache. When memory cache expires, another memory cache
+will be created on the next client search.
